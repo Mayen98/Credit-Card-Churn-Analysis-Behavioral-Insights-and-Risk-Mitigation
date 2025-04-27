@@ -1,0 +1,111 @@
+---
+title: "creditcard_customer_project"
+author: "Sayuree Vilas Kulkarni"
+date: "2024-02-04"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(readr)
+#setwd("C:/Users/Owner/Downloads/BankChurners (1).csv")
+bank_churn <- read.csv("BankChurners.csv")
+
+head(bank_churn)
+
+#keeping only those variables that we want.
+bank_churn_copy <- bank_churn[ , -c(1,5,9,10,11,12,13,15,16,17,18,19,20,21)]
+bank_churn_copy
+#export csv file of new variables from R to csv.
+write.csv(bank_churn_copy,"C:/Users/Owner/Downloads/BankChurners (1).csv", row.names = FALSE )
+
+
+#converting categorical variables with dummy numbers for calculation.
+
+bank_churn_copy$Attrition_Flag = ifelse(bank_churn_copy$Attrition_Flag == "Existing Customer", 0, 1)
+bank_churn_copy$Gender = ifelse(bank_churn_copy$Gender == "F", 1, 0)
+bank_churn_copy$Education_Level = ifelse(bank_churn_copy$Education_Level == "Unknown", 1, ifelse(bank_churn_copy$Education_Level == "Uneducated", 2, ifelse(bank_churn_copy$Education_Level == "High School", 3, ifelse(bank_churn_copy$Education_Level == "College", 4, ifelse(bank_churn_copy$Education_Level == "Graduate", 5, ifelse(bank_churn_copy$Education_Level == "Post-Graduate",6,ifelse(bank_churn_copy$Education_Level == "Doctorate",7,8)))))))
+bank_churn_copy$Income_Category = ifelse(bank_churn_copy$Income_Category == "Unknown", 1, ifelse(bank_churn_copy$Income_Category == "Less than $40K", 2, ifelse(bank_churn_copy$Income_Category == "$40K - $60K", 3, ifelse(bank_churn_copy$Income_Category == "$60K - $80K", 4, ifelse(bank_churn_copy$Income_Category == "$80K - $120K", 5, ifelse(bank_churn_copy$Income_Category == "$120K +",6,7))))))
+bank_churn_copy$Naive_Bayes_Classifier_Attrition_Flag_Card_Category_Contacts_Count_12_mon_Dependent_count_Education_Level_Months_Inactive_12_mon_1 = NULL
+bank_churn_copy$Naive_Bayes_Classifier_Attrition_Flag_Card_Category_Contacts_Count_12_mon_Dependent_count_Education_Level_Months_Inactive_12_mon_2 = NULL
+bank_churn_copy$Marital_Status = ifelse(bank_churn_copy$Marital_Status == "Single",0,1)
+
+#regression analysis of independent variables and finding the summary of regression
+bank_regression <- lm(Attrition_Flag ~  Gender + Education_Level + Income_Category + Marital_Status + Customer_Age + Credit_Limit , data = bank_churn_copy)
+summary(bank_regression)
+library(stargazer)
+stargazer(bank_regression, type= "text",title="Bank Churn rate", align=TRUE, dep.var.labels=c("AttritionFlag"),covariate.labels=c("EducationLevel","Gender","IncomeCategory", "CustomerAge", "Dependentcount","MaritalStatus" , "CreditLimit") ,omit.stat=c("ser","LL","ser","f"), no.space=TRUE,font.size = "tiny", digits=3)
+
+```
+
+Correlation Matrix
+```{r}
+library(kableExtra)
+library("ggplot2") 
+library("gridExtra")
+library(broom)
+library(stargazer)
+bank_churn_copy <- bank_churn_copy[,2:5]
+CorrelMat<-cor(bank_churn_copy)
+CorrelMat %>%
+  kable(digits=3) %>%
+  kable_styling(bootstrap_options = "bordered",
+                full_width = TRUE) %>%
+    collapse_rows(columns = 1,valign = "middle") %>%
+  row_spec(row = 0, bold = TRUE)
+```
+
+Checking if the adjusted R^2 changes with adding the variables.
+```{r}
+library(carData)
+
+mod1 <- lm(Attrition_Flag ~ Gender , data = bank_churn_copy)
+mod2 <- lm(Attrition_Flag ~ Gender + Education_Level, data = bank_churn_copy)
+mod3 <- lm(Attrition_Flag ~ Gender + Education_Level + Income_Category , data = bank_churn_copy)
+mod4 <- lm(Attrition_Flag ~ Gender + Education_Level + Income_Category + Marital_Status ,  data = bank_churn_copy)
+mod5 <- lm(Attrition_Flag ~ Gender + Education_Level + Income_Category + Marital_Status + Customer_Age ,  data = bank_churn_copy)
+bank_regression <- lm(Attrition_Flag ~  Gender + Education_Level + Income_Category + Marital_Status + Customer_Age + Credit_Limit , data = bank_churn_copy)
+stargazer(mod1, mod2,mod3, mod4, mod5 , bank_regression, type= "text",title="Attrition due to churn", align=TRUE, dep.var.labels=c("Attrition_Flag"),covariate.labels=c("Gender","EducationLevel","IncomeCategory", "MaritalStatus", "CustomerAge","CreditLimit") ,omit.stat=c("ser","LL","ser","f"), no.space=TRUE,font.size = "tiny", digits=3)
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+library(lmtest)
+granger_test <- grangertest(Attrition_Flag ~ Credit_Limit, order = 1, data = bank_churn_copy)
+print(granger_test)
+```
+
+
+```{r}
+```
+
+
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
